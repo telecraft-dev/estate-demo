@@ -1,0 +1,8 @@
+# The storefront web front end. Its second Path runs through the Kafka
+# bridge, which is what imposes a C2 floor on a Tier the storefront team
+# does not own — governance follows the data, not the org chart.
+owner: storefront-team
+class: C2
+paths:
+  - through: [storefront/mobile-edge, data-flow/gateway]
+  - through: [data-flow/gateway, data-flow/kafka-bridge]

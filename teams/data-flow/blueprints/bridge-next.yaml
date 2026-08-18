@@ -1,0 +1,79 @@
+# The Rollout candidate: the bridge with tail sampling added ahead of the
+# exporter, so the traces lane sheds volume without losing error traces.
+# Staged rather than flat-rebound because the sampler changes what reaches
+# the backend, and that is worth watching one cohort at a time (ADR-0029).
+name: bridge-next
+version: 1
+owner: gateway-owners
+satisfies:
+  - logs-delivered@1
+  - traces-delivered@2
+components:
+  - name: kafka-in
+    class: receiver
+    type: kafka
+    version: 2
+    config:
+      brokers: [kafka-0.telemetry.internal:9092, kafka-1.telemetry.internal:9092]
+      group_id: telecraft-bridge
+  - name: guard
+    class: processor
+    type: memory_limiter
+    version: 2
+    config:
+      check_interval: 1s
+      limit_percentage: 70
+      spike_limit_percentage: 20
+  - name: sampler
+    class: processor
+    type: tail_sampling
+    version: 1
+    config:
+      decision_wait: 20s
+      policies:
+        - name: errors
+          type: status_code
+          status_code:
+            status_codes: [ERROR]
+        - name: slow
+          type: latency
+          latency:
+            threshold_ms: 500
+        - name: baseline
+          type: probabilistic
+          probabilistic:
+            sampling_percentage: 10
+  - name: batcher
+    class: processor
+    type: batch
+    version: 2
+    config:
+      send_batch_size: 16384
+      timeout: 10s
+  - name: health
+    class: extension
+    type: health_check
+    version: 1
+  - name: reporting
+    class: extension
+    type: opamp
+    version: 1
+    config:
+      server:
+        ws:
+          endpoint: wss://opamp.telecraft.internal/v1/opamp
+pipelines:
+  traces:
+    - component: kafka-in
+    - component: guard
+    - component: sampler
+    - component: batcher
+    - component: data-flow/gateway-exporter@3
+  logs:
+    - component: kafka-in
+    - component: guard
+    - component: batcher
+    - component: data-flow/gateway-exporter@3
+extensions:
+  - component: health
+  - component: reporting

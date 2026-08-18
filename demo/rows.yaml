@@ -1,0 +1,107 @@
+# The Effective reading per (Service, Environment): the collector's own
+# reported running config, pipelines with component order preserved, never a
+# flat component list (ADR-0004). The same Service in two Environments is
+# two rows, judged independently (ADR-0033).
+#
+# This is the authored stand-in for what a collector reports over OpAMP —
+# the sanctioned tracer-bullet shape (internal/conformance), and the second
+# half of what a repository cannot hold.
+# The Grace table (REQ-014): the onboarding window per Service Class,
+# shrinking as the class rises — the most critical Services get the least
+# forgiveness. A Service with no onboarding date never enters a window, so
+# nothing here is waived by grace today; the table is what the console's
+# waived counts would draw on the week a Service is onboarded.
+grace:
+  - class: C1
+    window: 168h
+  - class: C2
+    window: 336h
+  - class: C3
+    window: 720h
+
+services:
+  - name: checkout/payments
+    class: C1
+    environments:
+      - name: production
+        pipelines:
+          - name: traces
+            receivers: [otlp/otlp-in]
+            processors: [k8s_attributes/enrich, memory_limiter/guard, batch/batcher]
+            exporters: [otlp_http/forward]
+          - name: logs
+            receivers: [file_log/tail]
+            processors: [k8s_attributes/enrich, memory_limiter/guard, batch/batcher]
+            exporters: [otlp_http/forward]
+          - name: metrics
+            receivers: [host_metrics/node]
+            processors: [k8s_attributes/enrich, memory_limiter/guard, batch/batcher]
+            exporters: [otlp_http/forward]
+      - name: staging
+        pipelines:
+          - name: traces
+            receivers: [otlp/otlp-in]
+            processors: [memory_limiter/guard, transform/infosec.pii-redaction, batch/batcher]
+            exporters: [otlp_http/data-flow.gateway-exporter]
+          - name: logs
+            receivers: [otlp/otlp-in]
+            processors: [memory_limiter/guard, transform/infosec.pii-redaction, batch/batcher]
+            exporters: [otlp_http/data-flow.gateway-exporter]
+          - name: metrics
+            receivers: [otlp/otlp-in]
+            processors: [memory_limiter/guard, batch/batcher]
+            exporters: [otlp_http/data-flow.gateway-exporter]
+
+  - name: checkout/basket
+    class: C2
+    environments:
+      - name: production
+        pipelines:
+          - name: traces
+            receivers: [otlp/otlp-in]
+            processors: [k8s_attributes/enrich, memory_limiter/guard, batch/batcher]
+            exporters: [otlp_http/forward]
+          - name: logs
+            receivers: [file_log/tail]
+            processors: [k8s_attributes/enrich, memory_limiter/guard, batch/batcher]
+            exporters: [otlp_http/forward]
+          - name: metrics
+            receivers: [host_metrics/node]
+            processors: [k8s_attributes/enrich, memory_limiter/guard, batch/batcher]
+            exporters: [otlp_http/forward]
+
+  - name: storefront/catalogue-web
+    class: C2
+    environments:
+      - name: production
+        pipelines:
+          - name: traces
+            receivers: [otlp/otlp-in]
+            processors: [memory_limiter/guard, batch/batcher]
+            exporters: [otlp_http/uplink]
+          - name: logs
+            receivers: [otlp/otlp-in]
+            processors: [memory_limiter/guard, transform/infosec.pii-redaction, batch/batcher]
+            exporters: [otlp_http/data-flow.gateway-exporter]
+          - name: metrics
+            receivers: [otlp/otlp-in]
+            processors: [memory_limiter/guard, filter/debug-counters, batch/batcher]
+            exporters: [otlp_http/uplink]
+
+  - name: storefront/search
+    class: C3
+    environments:
+      - name: production
+        pipelines:
+          - name: traces
+            receivers: [otlp/otlp-in]
+            processors: [memory_limiter/guard, transform/infosec.pii-redaction, batch/batcher]
+            exporters: [otlp_http/data-flow.gateway-exporter]
+          - name: logs
+            receivers: [otlp/otlp-in]
+            processors: [memory_limiter/guard, transform/infosec.pii-redaction, batch/batcher]
+            exporters: [otlp_http/data-flow.gateway-exporter]
+          - name: metrics
+            receivers: [otlp/otlp-in]
+            processors: [memory_limiter/guard, batch/batcher]
+            exporters: [otlp_http/data-flow.gateway-exporter]

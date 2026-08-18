@@ -1,0 +1,643 @@
+# The estate's runtime readings: the two things a repository cannot hold.
+#
+# In production the collector estate arrives through the EstateProvider seam
+# and the arrivals through the TelemetryProvider seam, both from live
+# systems. A
+# demo estate has neither, so it declares them here and `telecraft snapshot`
+# plays them back through the same seams. Everything judged from them — the
+# populations, the bands, every finding in every drawer — is the product's
+# own evaluators running over this file and the authored YAML beside it.
+#
+# Editing a reading here changes what the demo shows on the next push, which
+# is the point: this is the knob that makes a state demonstrable.
+
+as_of: 2026-08-19T09:00:00Z
+window: 24h
+
+collectors:
+
+  # The production aggregation gateway: six collectors, exactly the floor
+  # the Tier declares. Served over OpAMP, so the delivery split reads all
+  # served.
+  - id: gw-prod-1
+    attributes:
+      telecraft.tier: gateway
+      deployment.environment: production
+      k8s.namespace: telemetry
+      host.arch: amd64
+      service.instance.id: gw-prod-1
+    state: reporting
+    version: "0.158.0"
+    last_seen: 2026-08-19T08:59:11Z
+    delivery: served
+  - id: gw-prod-2
+    attributes:
+      telecraft.tier: gateway
+      deployment.environment: production
+      k8s.namespace: telemetry
+      host.arch: amd64
+      service.instance.id: gw-prod-2
+    state: reporting
+    version: "0.158.0"
+    last_seen: 2026-08-19T08:59:12Z
+    delivery: served
+  - id: gw-prod-3
+    attributes:
+      telecraft.tier: gateway
+      deployment.environment: production
+      k8s.namespace: telemetry
+      host.arch: amd64
+      service.instance.id: gw-prod-3
+    state: reporting
+    version: "0.158.0"
+    last_seen: 2026-08-19T08:59:13Z
+    delivery: served
+  - id: gw-prod-4
+    attributes:
+      telecraft.tier: gateway
+      deployment.environment: production
+      k8s.namespace: telemetry
+      host.arch: amd64
+      service.instance.id: gw-prod-4
+    state: reporting
+    version: "0.158.0"
+    last_seen: 2026-08-19T08:59:14Z
+    delivery: served
+  - id: gw-prod-5
+    attributes:
+      telecraft.tier: gateway
+      deployment.environment: production
+      k8s.namespace: telemetry
+      host.arch: amd64
+      service.instance.id: gw-prod-5
+    state: reporting
+    version: "0.158.0"
+    last_seen: 2026-08-19T08:59:15Z
+    delivery: served
+  - id: gw-prod-6
+    attributes:
+      telecraft.tier: gateway
+      deployment.environment: production
+      k8s.namespace: telemetry
+      host.arch: amd64
+      service.instance.id: gw-prod-6
+    state: reporting
+    version: "0.158.0"
+    last_seen: 2026-08-19T08:59:16Z
+    delivery: served
+
+  # The staging gateway: two collectors and no declared floor, so the
+  # population carries no teeth at all (ADR-0035 §2).
+  - id: gw-staging-1
+    attributes:
+      telecraft.tier: gateway
+      deployment.environment: staging
+      k8s.namespace: telemetry
+      host.arch: amd64
+      service.instance.id: gw-staging-1
+    state: reporting
+    version: "0.158.0"
+    last_seen: 2026-08-19T08:58:21Z
+    delivery: served
+  - id: gw-staging-2
+    attributes:
+      telecraft.tier: gateway
+      deployment.environment: staging
+      k8s.namespace: telemetry
+      host.arch: amd64
+      service.instance.id: gw-staging-2
+    state: reporting
+    version: "0.156.1"
+    last_seen: 2026-08-19T08:58:22Z
+    delivery: served
+    # Behind head: this collector reports an artefact other than the one
+    # git holds, which is delivery divergence — Intended against Declared,
+    # never a conformance problem with any Service (ADR-0004). With the
+    # Tier's collectors reporting two different stamps there is no single
+    # artefact in force, so its pipeline claims read unknown rather than
+    # being judged against a guess (ADR-0038 §4a).
+    running_sha: 4f1b7c0d2e9a6b8c1d3e5f70a2b4c6d8e0f1a3b5
+
+  # The Kafka bridge, mid-Rollout. bridge-a1 and bridge-a2 were stage 0's
+  # enumerated cohort; the rest are subject to stage 1's 25% hash, and
+  # which of them is inside it is computed per connect from the pinned
+  # hash attributes — never stored, never authored here.
+  - id: bridge-a1
+    attributes:
+      telecraft.tier: kafka-bridge
+      deployment.environment: production
+      host.name: bridge-a1
+      host.arch: amd64
+      service.instance.id: bridge-a1
+    state: reporting
+    version: "0.158.0"
+    last_seen: 2026-08-19T08:59:31Z
+    delivery: served
+    applied_at: 2026-08-19T06:12:00Z
+  - id: bridge-a2
+    attributes:
+      telecraft.tier: kafka-bridge
+      deployment.environment: production
+      host.name: bridge-a2
+      host.arch: amd64
+      service.instance.id: bridge-a2
+    state: reporting
+    version: "0.158.0"
+    last_seen: 2026-08-19T08:59:32Z
+    delivery: served
+    applied_at: 2026-08-19T06:12:00Z
+  - id: bridge-b1
+    attributes:
+      telecraft.tier: kafka-bridge
+      deployment.environment: production
+      host.name: bridge-b1
+      host.arch: amd64
+      service.instance.id: bridge-b1
+    state: reporting
+    version: "0.158.0"
+    last_seen: 2026-08-19T08:59:33Z
+    delivery: served
+    applied_at: 2026-08-19T06:12:00Z
+  - id: bridge-b2
+    attributes:
+      telecraft.tier: kafka-bridge
+      deployment.environment: production
+      host.name: bridge-b2
+      host.arch: amd64
+      service.instance.id: bridge-b2
+    state: reporting
+    version: "0.158.0"
+    last_seen: 2026-08-19T08:59:34Z
+    delivery: served
+    applied_at: 2026-08-19T06:12:00Z
+  - id: bridge-b3
+    attributes:
+      telecraft.tier: kafka-bridge
+      deployment.environment: production
+      host.name: bridge-b3
+      host.arch: amd64
+      service.instance.id: bridge-b3
+    state: reporting
+    version: "0.158.0"
+    last_seen: 2026-08-19T08:59:35Z
+    delivery: served
+    applied_at: 2026-08-19T06:12:00Z
+
+  # The node agents: twenty-four of them, git-delivered with the DaemonSet,
+  # which is why the delivery split on this Tier reads all git (REQ-041).
+  # One node went quiet overnight and reads stale — last-known plus age,
+  # never a fabricated present tense (ADR-0040).
+  - id: node-01
+    attributes:
+      telecraft.tier: edge
+      deployment.environment: production
+      k8s.node.name: node-01
+      host.arch: amd64
+      service.instance.id: node-01
+    state: reporting
+    version: "0.158.0"
+    last_seen: 2026-08-19T08:59:01Z
+    delivery: git
+  - id: node-02
+    attributes:
+      telecraft.tier: edge
+      deployment.environment: production
+      k8s.node.name: node-02
+      host.arch: amd64
+      service.instance.id: node-02
+    state: reporting
+    version: "0.158.0"
+    last_seen: 2026-08-19T08:59:02Z
+    delivery: git
+  - id: node-03
+    attributes:
+      telecraft.tier: edge
+      deployment.environment: production
+      k8s.node.name: node-03
+      host.arch: amd64
+      service.instance.id: node-03
+    state: reporting
+    version: "0.158.0"
+    last_seen: 2026-08-19T08:59:03Z
+    delivery: git
+  - id: node-04
+    attributes:
+      telecraft.tier: edge
+      deployment.environment: production
+      k8s.node.name: node-04
+      host.arch: amd64
+      service.instance.id: node-04
+    state: reporting
+    version: "0.158.0"
+    last_seen: 2026-08-19T08:59:04Z
+    delivery: git
+  - id: node-05
+    attributes:
+      telecraft.tier: edge
+      deployment.environment: production
+      k8s.node.name: node-05
+      host.arch: amd64
+      service.instance.id: node-05
+    state: reporting
+    version: "0.158.0"
+    last_seen: 2026-08-19T08:59:05Z
+    delivery: git
+  - id: node-06
+    attributes:
+      telecraft.tier: edge
+      deployment.environment: production
+      k8s.node.name: node-06
+      host.arch: amd64
+      service.instance.id: node-06
+    state: reporting
+    version: "0.158.0"
+    last_seen: 2026-08-19T08:59:06Z
+    delivery: git
+  - id: node-07
+    attributes:
+      telecraft.tier: edge
+      deployment.environment: production
+      k8s.node.name: node-07
+      host.arch: amd64
+      service.instance.id: node-07
+    state: reporting
+    version: "0.158.0"
+    last_seen: 2026-08-19T08:59:07Z
+    delivery: git
+  - id: node-08
+    attributes:
+      telecraft.tier: edge
+      deployment.environment: production
+      k8s.node.name: node-08
+      host.arch: amd64
+      service.instance.id: node-08
+    state: reporting
+    version: "0.158.0"
+    last_seen: 2026-08-19T08:59:08Z
+    delivery: git
+  - id: node-09
+    attributes:
+      telecraft.tier: edge
+      deployment.environment: production
+      k8s.node.name: node-09
+      host.arch: amd64
+      service.instance.id: node-09
+    state: reporting
+    version: "0.158.0"
+    last_seen: 2026-08-19T08:59:09Z
+    delivery: git
+  - id: node-10
+    attributes:
+      telecraft.tier: edge
+      deployment.environment: production
+      k8s.node.name: node-10
+      host.arch: amd64
+      service.instance.id: node-10
+    state: reporting
+    version: "0.158.0"
+    last_seen: 2026-08-19T08:59:10Z
+    delivery: git
+  - id: node-11
+    attributes:
+      telecraft.tier: edge
+      deployment.environment: production
+      k8s.node.name: node-11
+      host.arch: amd64
+      service.instance.id: node-11
+    state: reporting
+    version: "0.158.0"
+    last_seen: 2026-08-19T08:59:11Z
+    delivery: git
+  - id: node-12
+    attributes:
+      telecraft.tier: edge
+      deployment.environment: production
+      k8s.node.name: node-12
+      host.arch: amd64
+      service.instance.id: node-12
+    state: reporting
+    version: "0.158.0"
+    last_seen: 2026-08-19T08:59:12Z
+    delivery: git
+  - id: node-13
+    attributes:
+      telecraft.tier: edge
+      deployment.environment: production
+      k8s.node.name: node-13
+      host.arch: amd64
+      service.instance.id: node-13
+    state: reporting
+    version: "0.158.0"
+    last_seen: 2026-08-19T08:59:13Z
+    delivery: git
+  - id: node-14
+    attributes:
+      telecraft.tier: edge
+      deployment.environment: production
+      k8s.node.name: node-14
+      host.arch: amd64
+      service.instance.id: node-14
+    state: reporting
+    version: "0.158.0"
+    last_seen: 2026-08-19T08:59:14Z
+    delivery: git
+  - id: node-15
+    attributes:
+      telecraft.tier: edge
+      deployment.environment: production
+      k8s.node.name: node-15
+      host.arch: amd64
+      service.instance.id: node-15
+    state: reporting
+    version: "0.158.0"
+    last_seen: 2026-08-19T08:59:15Z
+    delivery: git
+  - id: node-16
+    attributes:
+      telecraft.tier: edge
+      deployment.environment: production
+      k8s.node.name: node-16
+      host.arch: amd64
+      service.instance.id: node-16
+    state: reporting
+    version: "0.158.0"
+    last_seen: 2026-08-19T08:59:16Z
+    delivery: git
+  - id: node-17
+    attributes:
+      telecraft.tier: edge
+      deployment.environment: production
+      k8s.node.name: node-17
+      host.arch: amd64
+      service.instance.id: node-17
+    state: reporting
+    version: "0.158.0"
+    last_seen: 2026-08-19T08:59:17Z
+    delivery: git
+  - id: node-18
+    attributes:
+      telecraft.tier: edge
+      deployment.environment: production
+      k8s.node.name: node-18
+      host.arch: amd64
+      service.instance.id: node-18
+    state: reporting
+    version: "0.158.0"
+    last_seen: 2026-08-19T08:59:18Z
+    delivery: git
+  - id: node-19
+    attributes:
+      telecraft.tier: edge
+      deployment.environment: production
+      k8s.node.name: node-19
+      host.arch: amd64
+      service.instance.id: node-19
+    state: reporting
+    version: "0.158.0"
+    last_seen: 2026-08-19T08:59:19Z
+    delivery: git
+  - id: node-20
+    attributes:
+      telecraft.tier: edge
+      deployment.environment: production
+      k8s.node.name: node-20
+      host.arch: amd64
+      service.instance.id: node-20
+    state: reporting
+    version: "0.158.0"
+    last_seen: 2026-08-19T08:59:20Z
+    delivery: git
+  - id: node-21
+    attributes:
+      telecraft.tier: edge
+      deployment.environment: production
+      k8s.node.name: node-21
+      host.arch: amd64
+      service.instance.id: node-21
+    state: reporting
+    version: "0.158.0"
+    last_seen: 2026-08-19T08:59:21Z
+    delivery: git
+  - id: node-22
+    attributes:
+      telecraft.tier: edge
+      deployment.environment: production
+      k8s.node.name: node-22
+      host.arch: amd64
+      service.instance.id: node-22
+    state: reporting
+    version: "0.158.0"
+    last_seen: 2026-08-19T08:59:22Z
+    delivery: git
+  - id: node-23
+    attributes:
+      telecraft.tier: edge
+      deployment.environment: production
+      k8s.node.name: node-23
+      host.arch: amd64
+      service.instance.id: node-23
+    state: stale
+    version: "0.158.0"
+    last_seen: 2026-08-18T22:41:00Z
+    delivery: git
+  - id: node-24
+    attributes:
+      telecraft.tier: edge
+      deployment.environment: production
+      k8s.node.name: node-24
+      host.arch: amd64
+      service.instance.id: node-24
+    state: reporting
+    version: "0.158.0"
+    last_seen: 2026-08-19T08:59:24Z
+    delivery: git
+
+  # The storefront team's mobile edge: three collectors, its declared
+  # floor exactly.
+  - id: mobile-edge-1
+    attributes:
+      telecraft.tier: mobile-edge
+      deployment.environment: production
+      host.arch: amd64
+      service.instance.id: mobile-edge-1
+    state: reporting
+    version: "0.158.0"
+    last_seen: 2026-08-19T08:59:41Z
+    delivery: served
+  - id: mobile-edge-2
+    attributes:
+      telecraft.tier: mobile-edge
+      deployment.environment: production
+      host.arch: amd64
+      service.instance.id: mobile-edge-2
+    state: reporting
+    version: "0.158.0"
+    last_seen: 2026-08-19T08:59:42Z
+    delivery: served
+  - id: mobile-edge-3
+    attributes:
+      telecraft.tier: mobile-edge
+      deployment.environment: production
+      host.arch: amd64
+      service.instance.id: mobile-edge-3
+    state: reporting
+    version: "0.158.0"
+    last_seen: 2026-08-19T08:59:43Z
+    delivery: served
+
+  # Ungoverned collectors: they match no Tier selector, so nobody governs
+  # them (ADR-0031). Concern, never failure — they carry the onboard CTA
+  # and count in no compliance denominator. The first two connect to the
+  # server and receive the Unmatched artefact, so they are commit-stamped
+  # and health-visible while governed by nobody (ADR-0030); the last two
+  # are read through the estate provider and never served. No stigma
+  # attaches to the delivery path — only to matching no selector.
+  - id: legacy-agg-1
+    attributes:
+      telecraft.unmatched: true
+      deployment.environment: production
+      k8s.namespace: legacy-telemetry
+      host.arch: amd64
+      service.instance.id: legacy-agg-1
+    state: reporting
+    version: "0.152.0"
+    last_seen: 2026-08-19T08:57:10Z
+    delivery: served
+  - id: legacy-agg-2
+    attributes:
+      telecraft.unmatched: true
+      deployment.environment: production
+      k8s.namespace: legacy-telemetry
+      host.arch: amd64
+      service.instance.id: legacy-agg-2
+    state: reporting
+    version: "0.152.0"
+    last_seen: 2026-08-19T08:57:11Z
+    delivery: served
+  - id: mktg-otel-1
+    attributes:
+      deployment.environment: production
+      k8s.namespace: marketing
+      service.name: campaign-tracker
+      host.arch: amd64
+      service.instance.id: mktg-otel-1
+    state: reporting
+    version: "0.152.0"
+    last_seen: 2026-08-19T08:57:12Z
+    delivery: git
+  - id: mktg-otel-2
+    attributes:
+      deployment.environment: production
+      k8s.namespace: marketing
+      service.name: campaign-tracker
+      host.arch: amd64
+      service.instance.id: mktg-otel-2
+    state: reporting
+    version: "0.152.0"
+    last_seen: 2026-08-19T08:57:13Z
+    delivery: git
+
+rows:
+  # The arrivals per (Service, Environment) — the Observed leg of the
+  # verdict cross (ADR-0004). A signal declared unknown is "we cannot see",
+  # which is never rendered as "it is absent" (ADR-0008).
+
+  - service: checkout/payments
+    environment: production
+    signals:
+      traces: {present: true, volume: 4182930, attribute_coverage: {service.namespace: 0.999, deployment.environment.name: 0.998}}
+      logs: {present: true, volume: 18402117}
+      metrics: {present: true, volume: 2210044}
+
+  - service: checkout/payments
+    environment: staging
+    signals:
+      traces: {present: true, volume: 41208}
+      # Staging stopped shipping logs when the namespace was rebuilt. No
+      # Requirement covers logs outside production, so nothing in the cross
+      # fails — but the rendered config still routes a logs lane, and that
+      # lane is an arrival claim nothing backs (ADR-0038 §5).
+      logs: {present: false, volume: 0, since: 2026-08-14T11:20:00Z}
+      metrics: {present: true, volume: 9921}
+
+  - service: checkout/basket
+    environment: production
+    signals:
+      traces: {present: true, volume: 2904881, attribute_coverage: {service.namespace: 0.997, deployment.environment.name: 0.996}}
+      logs: {present: true, volume: 7710233}
+      metrics: {present: true, volume: 1180291}
+
+  - service: storefront/catalogue-web
+    environment: production
+    signals:
+      # Spans stopped arriving after the mobile release: the pipeline is
+      # configured and delivering nothing. Effective says yes, Observed says
+      # no — broken_pipeline, the most valuable finding the platform
+      # produces and invisible to any tool that reads config alone.
+      traces: {present: false, volume: 0, since: 2026-08-17T19:05:00Z, attribute_coverage: {}}
+      logs: {present: true, volume: 5512908}
+      metrics: {present: true, volume: 902113}
+
+  - service: storefront/search
+    environment: production
+    signals:
+      traces: {present: true, volume: 881204, attribute_coverage: {service.namespace: 0.981, deployment.environment.name: 0.979}}
+      logs: {present: true, volume: 1204778}
+      # Mid-migration to the shared metrics SDK. An authored Exemption waives
+      # the count until the end of January; the diagnosis stays.
+      metrics: {present: false, volume: 0, since: 2026-07-28T09:00:00Z}
+
+tiers:
+  # The self-telemetry reading per Tier (ADR-0039). `emitting: [all]` says
+  # every component the artefact instantiates reports its own telemetry;
+  # the generator renders that into the join-key attribute combinations R-4
+  # pins, and the platform's own normaliser reads them back.
+
+  - tier: data-flow/gateway
+    signals:
+      metrics: {present: true, volume: 412880}
+      logs: {present: true, volume: 20114}
+    emitting: [all]
+
+  - tier: data-flow/gateway-staging
+    signals:
+      metrics: {present: true, volume: 18220}
+      logs: {present: true, volume: 1902}
+    emitting: [all]
+
+  - tier: data-flow/kafka-bridge
+    signals:
+      metrics: {present: true, volume: 288104}
+      logs: {present: true, volume: 9921}
+    emitting: [all]
+    # The batch processor has emitted nothing since the bridge was rebuilt,
+    # while every other component on the Tier reports normally. The artefact
+    # instantiates it and it is silent past the settle window: "the config
+    # didn't work" in its sharpest form (ADR-0038 §5c).
+    silent: [batch/batcher]
+    shortfall_since: 2026-08-18T04:00:00Z
+
+  - tier: edge-ops/edge
+    signals:
+      metrics: {present: true, volume: 1804221}
+      logs: {present: true, volume: 44120}
+    emitting: [all]
+
+  - tier: edge-ops/edge-arm
+    # The arm64 pool was authored ahead of the migration and nothing has
+    # ever matched it. Watching started in May; the shortfall has persisted
+    # ever since, which is what escalates a neutral never_seen to a
+    # violation against the declared floor (ADR-0035 §4).
+    signals:
+      metrics: {known: false, cause: no self-telemetry has ever arrived for this Tier}
+      logs: {known: false, cause: no self-telemetry has ever arrived for this Tier}
+    ever_seen: false
+    first_watched: 2026-05-02T00:00:00Z
+    shortfall_since: 2026-05-02T00:00:00Z
+
+  - tier: storefront/mobile-edge
+    signals:
+      metrics: {present: true, volume: 96220}
+      logs: {present: true, volume: 4410}
+    emitting: [all]
+

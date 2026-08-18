@@ -1,0 +1,80 @@
+# The mobile edge collector: the storefront team's own intake for the
+# mobile apps' OTLP traffic, terminated outside the cluster. It is theirs to
+# compose — the platform governs the palette, never the composition
+# (ADR-0021, ADR-0022).
+#
+# The metrics lane runs a filter to drop the apps' debug counters. Upstream
+# rates that processor alpha on metrics, which sits below the beta floor
+# this Tier inherits from the C2 Service traversing it — a visible finding,
+# never a block (ADR-0023 §5).
+name: mobile-collector
+version: 1
+owner: storefront-team
+satisfies:
+  - traces-delivered@2
+components:
+  - name: otlp-in
+    class: receiver
+    type: otlp
+    version: 1
+    config:
+      protocols:
+        http:
+          endpoint: 0.0.0.0:4318
+  - name: guard
+    class: processor
+    type: memory_limiter
+    version: 1
+    config:
+      check_interval: 1s
+      limit_percentage: 65
+      spike_limit_percentage: 20
+  - name: debug-counters
+    class: processor
+    type: filter
+    version: 1
+    config:
+      metrics:
+        exclude:
+          match_type: regexp
+          metric_names: ["^app\\.debug\\..*"]
+  - name: batcher
+    class: processor
+    type: batch
+    version: 1
+    config:
+      send_batch_size: 2048
+      timeout: 5s
+  - name: uplink
+    class: exporter
+    type: otlp_http
+    version: 1
+    config:
+      endpoint: https://gateway.telemetry.internal:4318
+  - name: health
+    class: extension
+    type: health_check
+    version: 1
+  - name: reporting
+    class: extension
+    type: opamp
+    version: 1
+    config:
+      server:
+        ws:
+          endpoint: wss://opamp.telecraft.internal/v1/opamp
+pipelines:
+  traces:
+    - component: otlp-in
+    - component: guard
+    - component: batcher
+    - component: uplink
+  metrics:
+    - component: otlp-in
+    - component: guard
+    - component: debug-counters
+    - component: batcher
+    - component: uplink
+extensions:
+  - component: health
+  - component: reporting

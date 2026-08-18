@@ -1,0 +1,59 @@
+# The Kafka bridge: the buffer between the gateway and the backend, so a
+# backend outage costs replay rather than data. This is the *from* binding
+# of the active Rollout — the candidate lives beside it as a sibling
+# Blueprint (ADR-0029 §3).
+name: bridge-standard
+version: 2
+owner: gateway-owners
+satisfies:
+  - logs-delivered@1
+  - traces-delivered@2
+components:
+  - name: kafka-in
+    class: receiver
+    type: kafka
+    version: 2
+    config:
+      brokers: [kafka-0.telemetry.internal:9092, kafka-1.telemetry.internal:9092]
+      group_id: telecraft-bridge
+  - name: guard
+    class: processor
+    type: memory_limiter
+    version: 2
+    config:
+      check_interval: 1s
+      limit_percentage: 70
+      spike_limit_percentage: 20
+  - name: batcher
+    class: processor
+    type: batch
+    version: 2
+    config:
+      send_batch_size: 16384
+      timeout: 10s
+  - name: health
+    class: extension
+    type: health_check
+    version: 1
+  - name: reporting
+    class: extension
+    type: opamp
+    version: 1
+    config:
+      server:
+        ws:
+          endpoint: wss://opamp.telecraft.internal/v1/opamp
+pipelines:
+  traces:
+    - component: kafka-in
+    - component: guard
+    - component: batcher
+    - component: data-flow/gateway-exporter@3
+  logs:
+    - component: kafka-in
+    - component: guard
+    - component: batcher
+    - component: data-flow/gateway-exporter@3
+extensions:
+  - component: health
+  - component: reporting

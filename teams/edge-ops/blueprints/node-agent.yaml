@@ -1,0 +1,101 @@
+# The node agent every worker runs: tails container logs, scrapes host
+# metrics, accepts OTLP from workloads on the node, and forwards everything
+# to the gateway. Git-delivered — the Tier binding it renders for carries no
+# serving block, so the artefact ships with the DaemonSet (REQ-041).
+name: node-agent
+version: 3
+owner: edge-owners
+satisfies:
+  - logs-delivered@1
+  - traces-delivered@2
+  - metrics-delivered@1
+components:
+  - name: otlp-in
+    class: receiver
+    type: otlp
+    version: 2
+    config:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:4317
+  - name: tail
+    class: receiver
+    type: file_log
+    version: 2
+    config:
+      include: [/var/log/pods/*/*/*.log]
+      include_file_path: true
+      start_at: end
+  - name: node
+    class: receiver
+    type: host_metrics
+    version: 1
+    config:
+      collection_interval: 30s
+      scrapers:
+        cpu: {}
+        memory: {}
+        filesystem: {}
+        network: {}
+  - name: enrich
+    class: processor
+    type: k8s_attributes
+    version: 2
+    config:
+      passthrough: false
+      extract:
+        metadata: [k8s.namespace.name, k8s.pod.name, k8s.node.name, k8s.deployment.name]
+  - name: guard
+    class: processor
+    type: memory_limiter
+    version: 2
+    config:
+      check_interval: 1s
+      limit_percentage: 60
+      spike_limit_percentage: 20
+  - name: batcher
+    class: processor
+    type: batch
+    version: 2
+    config:
+      send_batch_size: 4096
+      timeout: 5s
+  - name: forward
+    class: exporter
+    type: otlp_http
+    version: 2
+    config:
+      endpoint: https://gateway.telemetry.internal:4318
+      compression: gzip
+  - name: health
+    class: extension
+    type: health_check
+    version: 1
+  - name: spool
+    class: extension
+    type: file_storage
+    version: 1
+    config:
+      directory: /var/lib/otelcol/spool
+pipelines:
+  traces:
+    - component: otlp-in
+    - component: enrich
+    - component: guard
+    - component: batcher
+    - component: forward
+  logs:
+    - component: tail
+    - component: enrich
+    - component: guard
+    - component: batcher
+    - component: forward
+  metrics:
+    - component: node
+    - component: enrich
+    - component: guard
+    - component: batcher
+    - component: forward
+extensions:
+  - component: health
+  - component: spool

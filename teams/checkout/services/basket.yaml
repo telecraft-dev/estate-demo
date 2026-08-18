@@ -1,0 +1,4 @@
+owner: checkout-team
+class: C2
+paths:
+  - through: [edge-ops/edge, data-flow/gateway]

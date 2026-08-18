@@ -1,0 +1,8 @@
+# The estate-level self-telemetry destination (REQ-053, ADR-0039 §2):
+# declared once, resolved per Tier at render on the Tier's Environment.
+# Production pushes to its own collector-of-collectors so an outage in the
+# main path cannot also blind the platform to itself.
+self_telemetry:
+  endpoint: https://otlp.observability.internal:4318
+  environments:
+    production: https://otlp-prod.observability.internal:4318

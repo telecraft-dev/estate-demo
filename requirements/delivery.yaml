@@ -1,0 +1,69 @@
+# Signal delivery: each of these asserts on both readings, which is what
+# lets the evaluator tell a broken pipeline apart from an uninstrumented
+# Service. A requirement with only a config assertion can be satisfied by a
+# collector that delivers nothing; one with only a signal assertion can fail
+# without naming a cause.
+
+- id: logs-delivered
+  title: Logs are collected and delivered
+  description: >
+    The Service's logs reach a backend. Collection may be by file tail or by
+    OTLP: how the logs are gathered is the owner's choice, that they arrive
+    is not. Scoped to production — a quiet staging namespace overnight is
+    normal, not a finding (ADR-0033).
+  version: 1
+  requirement_level: required
+  owner: platform-observability
+  environments: [production]
+  config:
+    has_receiver: [file_log, otlp]
+  signal:
+    kind: logs
+    present: true
+    window: 24h
+    min_volume: 1
+  remediation: >
+    Add a file_log or otlp receiver to the collector serving this Service and
+    wire it into a logs pipeline. If a receiver is already present the
+    pipeline is configured but not delivering: check the exporter queue and
+    the collector's own metrics for refused or dropped records.
+
+- id: traces-delivered
+  title: Distributed traces are delivered
+  description: >
+    The Service emits spans. Traces are what make a multi-service failure
+    diagnosable, and the checkout path crosses four Services.
+  version: 2
+  requirement_level: required
+  owner: platform-observability
+  config:
+    has_receiver: [otlp]
+  signal:
+    kind: traces
+    present: true
+    window: 24h
+    min_volume: 1
+  remediation: >
+    Instrument the Service with an OpenTelemetry SDK or auto-instrumentation
+    agent and point it at the collector's OTLP receiver. Spans arriving with
+    no receiver configured means something is bypassing the managed
+    collector.
+
+- id: metrics-delivered
+  title: Service metrics are delivered
+  description: >
+    The Service emits metrics. Without them there is no baseline for
+    "normal", so no alert threshold can be set honestly.
+  version: 1
+  requirement_level: conditionally_required
+  owner: platform-observability
+  config:
+    has_receiver: [otlp, host_metrics, prometheus]
+  signal:
+    kind: metrics
+    present: true
+    window: 24h
+    min_volume: 1
+  remediation: >
+    Enable metric export in the Service's SDK, or add a host_metrics or
+    prometheus receiver to the collector serving it.

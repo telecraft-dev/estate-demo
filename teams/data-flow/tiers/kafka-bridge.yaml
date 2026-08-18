@@ -1,0 +1,17 @@
+# The Kafka bridge Tier, currently mid-Rollout: while the Rollout file
+# exists this Tier is dual-bound, and both artefacts render at head — the
+# base from this binding, `kafka-bridge@next.yaml` from the candidate
+# (ADR-0029 §3). A direct rebind here fails render validation until the
+# Rollout completes or aborts.
+owner: gateway-owners
+environment: production
+blueprint: data-flow/bridge-standard@2
+selector:
+  telecraft.tier: kafka-bridge
+  deployment.environment: production
+min_expected: 4
+serving:
+  endpoint: wss://opamp.telecraft.internal/v1/opamp
+hops:
+  - from: data-flow/gateway
+    trusted: true

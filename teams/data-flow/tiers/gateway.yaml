@@ -1,0 +1,19 @@
+# The production aggregation gateway: served over OpAMP, so the supervisor
+# config renders beside the collector artefact (REQ-032). One arrival is
+# untrusted — trust is a property of the Hop, never of the Tier (ADR-0007),
+# and the undeclared trust level on the internet Hop fails safe.
+owner: gateway-owners
+environment: production
+blueprint: data-flow/gateway-standard@5
+selector:
+  telecraft.tier: gateway
+  deployment.environment: production
+min_expected: 6
+serving:
+  endpoint: wss://opamp.telecraft.internal/v1/opamp
+hops:
+  - from: internet
+  - from: edge-ops/edge
+    trusted: true
+  - from: storefront/mobile-edge
+    trusted: true

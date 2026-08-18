@@ -1,0 +1,27 @@
+# Staging the tail-sampling bridge across the Kafka bridge population
+# (ADR-0029). Every step is a commit on this one small file: starting was
+# adding it, advancing is bumping `stage`, completing flips the Tier to the
+# candidate and deletes it, aborting deletes it alone.
+#
+# Stage 0 was the two brokers the team trusts; stage 1 — active now — is a
+# quarter of the population by stable hash. Statistically 25%, never
+# exactly 25%, and the hash attributes are pinned with the object so
+# advancing cannot reshuffle who is already in.
+owner: gateway-owners
+tier: data-flow/kafka-bridge
+from: data-flow/bridge-standard@2
+to: data-flow/bridge-next@1
+stage: 1
+hash_attributes: [service.instance.id]
+stages:
+  - cohort:
+      hosts:
+        attribute: host.name
+        values: [bridge-a1, bridge-a2]
+    soak: 2h
+  - cohort:
+      percent: 25
+    soak: 24h
+  - cohort:
+      percent: 100
+    soak: 24h

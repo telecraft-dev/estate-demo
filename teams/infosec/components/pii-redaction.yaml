@@ -1,0 +1,21 @@
+# The shared redaction Component every lane carrying customer data
+# references (ADR-0016). Consumed across teams by reference, never by copy:
+# Information Security owns the statements, and a consumer adopting a new
+# version is a reviewed change in the consumer's own file (ADR-0026 §3).
+name: pii-redaction
+class: processor
+type: transform
+version: 3
+owner: pii-guardians
+config:
+  error_mode: ignore
+  log_statements:
+    - context: log
+      statements:
+        - replace_pattern(body, "\\b\\d{13,16}\\b", "[redacted-pan]")
+        - replace_pattern(body, "[\\w.+-]+@[\\w-]+\\.[\\w.]+", "[redacted-email]")
+  trace_statements:
+    - context: span
+      statements:
+        - delete_key(attributes, "http.request.header.authorization")
+        - delete_key(attributes, "enduser.id")

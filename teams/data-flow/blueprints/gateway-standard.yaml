@@ -1,0 +1,74 @@
+# The production aggregation gateway: everything from the edge and from
+# untrusted arrivals lands here, is redacted, batched and exported once.
+#
+# The redaction reference is pinned at @2 while Information Security has
+# moved to @3 — the pin is legible and the gap is library_drift, the
+# consumer's to review and adopt (ADR-0026 §2, REQ-025).
+name: gateway-standard
+version: 5
+owner: gateway-owners
+satisfies:
+  - logs-delivered@1
+  - traces-delivered@2
+  - metrics-delivered@1
+components:
+  - name: otlp-in
+    class: receiver
+    type: otlp
+    version: 2
+    config:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:4317
+        http:
+          endpoint: 0.0.0.0:4318
+  - name: guard
+    class: processor
+    type: memory_limiter
+    version: 2
+    config:
+      check_interval: 1s
+      limit_percentage: 75
+      spike_limit_percentage: 20
+  - name: batcher
+    class: processor
+    type: batch
+    version: 2
+    config:
+      send_batch_size: 8192
+      timeout: 5s
+  - name: health
+    class: extension
+    type: health_check
+    version: 1
+    config:
+      endpoint: 0.0.0.0:13133
+  - name: reporting
+    class: extension
+    type: opamp
+    version: 1
+    config:
+      server:
+        ws:
+          endpoint: wss://opamp.telecraft.internal/v1/opamp
+pipelines:
+  traces:
+    - component: otlp-in
+    - component: guard
+    - component: infosec/pii-redaction@2
+    - component: batcher
+    - component: data-flow/gateway-exporter@3
+  logs:
+    - component: otlp-in
+    - component: guard
+    - component: infosec/pii-redaction@2
+    - component: batcher
+    - component: data-flow/gateway-exporter@3
+  metrics:
+    - component: otlp-in
+    - component: guard
+    - component: batcher
+    - component: data-flow/gateway-exporter@3
+extensions:
+  - component: health
+  - component: reporting

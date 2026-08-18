@@ -1,0 +1,8 @@
+# The Service that takes the money: C1, the strictest class. Its Paths are
+# what tighten every Tier they traverse to the C1 floor — strictness is
+# derived from traversal, never hand-maintained (ADR-0025 §4).
+owner: checkout-team
+class: C1
+paths:
+  - through: [edge-ops/edge, data-flow/gateway]
+  - through: [data-flow/gateway-staging]

@@ -1,0 +1,13 @@
+# The node agent DaemonSet: git-delivered, so no serving block and no
+# supervisor artefact (REQ-041). Every arrival is a workload on the same
+# node, so no strip processor renders here.
+owner: edge-owners
+environment: production
+blueprint: edge-ops/node-agent@3
+selector:
+  telecraft.tier: edge
+  deployment.environment: production
+min_expected: 24
+hops:
+  - from: workloads
+    trusted: true

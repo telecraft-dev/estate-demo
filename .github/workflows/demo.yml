@@ -1,0 +1,166 @@
+# The demo pipeline is the product pipeline (issue #50): every push to this
+# estate re-runs the platform's own evaluators over it, builds the console,
+# and publishes the two together. Nothing in the deployed site is authored
+# by hand — the cards, drawers, populations and findings are all output of
+# the code in telecraft-dev/telecraft, over the YAML in this repository.
+#
+# There is no server: a static host cannot run one. The console is built in
+# demo mode and reads `demo-snapshot.json` — the documents the platform API
+# would serve — beside it. Read-only falls out by construction.
+
+name: Demo
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      telecraft_ref:
+        description: The telecraft-dev/telecraft ref to build the console and generator from
+        required: false
+        default: main
+
+# The Pages deployment needs to write a deployment and mint an OIDC token
+# for it; nothing else here writes anything.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deployment at a time, and never cancel one in flight: a half-replaced
+# site is worse than a stale one.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  # The active Catalogue authoring is judged against. Installed catalogues
+  # are retained beside it, never replaced (ADR-0020 §9).
+  ACTIVE_CATALOGUE: catalogues/catalogue-v0.158.0.json
+  # The team the demo lands scoped to: the shelf's resting scope
+  # (ADR-0042 §2). The root team makes the whole estate the first view.
+  DEMO_TEAM: engineering
+
+jobs:
+  build:
+    name: Evaluate the estate and build the console
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the estate
+        uses: actions/checkout@v4
+        with:
+          path: estate
+
+      - name: Check out the platform
+        uses: actions/checkout@v4
+        with:
+          repository: telecraft-dev/telecraft
+          ref: ${{ inputs.telecraft_ref || 'main' }}
+          path: telecraft
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+          cache-dependency-path: telecraft/go.sum
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: telecraft/console/package-lock.json
+
+      # Rendering is a deterministic function of the authored trees
+      # (ADR-0028 §2), so the committed rendered/ tree must equal a fresh
+      # render — and it is checked byte for byte here, at the commit the
+      # committed artefacts stamp themselves with. That indirection is
+      # forced: every artefact carries the SHA that rendered it
+      # (ADR-0013), and no commit can carry its own. Recomputing at the
+      # stamp the tree already claims is the exact invariant; a mismatch
+      # means the sources moved and the tree did not.
+      - name: The rendered tree matches its sources
+        working-directory: telecraft
+        run: |
+          stamped=$(grep -oE '[0-9a-f]{40}' \
+            ../estate/rendered/_estate/unmatched.yaml | head -1)
+          echo "the committed tree stamps itself $stamped"
+          go run ./cmd/telecraft render \
+            -estate ../estate \
+            -catalogue "../estate/$ACTIVE_CATALOGUE" \
+            -commit "$stamped" \
+            -out "$RUNNER_TEMP/recompute"
+          diff -r "$RUNNER_TEMP/recompute/rendered" ../estate/rendered
+          diff "$RUNNER_TEMP/recompute/CODEOWNERS" ../estate/CODEOWNERS
+
+      # Now stamp the working tree with the commit being published, so the
+      # artefacts the demo shows carry the identity of the estate it was
+      # built from. This is the render an instance's PR bot performs; the
+      # tree is never committed back.
+      - name: Render at the published commit
+        working-directory: telecraft
+        run: |
+          go run ./cmd/telecraft render \
+            -estate ../estate \
+            -catalogue "../estate/$ACTIVE_CATALOGUE" \
+            -commit "$GITHUB_SHA"
+
+      - name: Install the console's dependencies
+        working-directory: telecraft/console
+        run: npm ci
+
+      - name: Build the console in demo mode
+        working-directory: telecraft/console
+        run: npm run build:demo
+
+      # Every asset is bundled and self-hosted (ADR-0045 §5). The check runs
+      # over the built console before the snapshot joins it: the snapshot is
+      # estate data — endpoints and module paths the console prints and
+      # never fetches — not a bundled artefact.
+      - name: Zero-CDN check
+        working-directory: telecraft/console
+        run: npm run check:zero-cdn
+
+      - name: Evaluate the estate into the API snapshot
+        working-directory: telecraft
+        run: |
+          go run ./cmd/telecraft snapshot \
+            -estate ../estate \
+            -catalogue "../estate/$ACTIVE_CATALOGUE" \
+            -catalogues ../estate/catalogues \
+            -library ../estate/requirements \
+            -exemptions ../estate/exemptions \
+            -rows ../estate/demo/rows.yaml \
+            -readings ../estate/demo/readings.yaml \
+            -commit "$GITHUB_SHA" \
+            -repository "$GITHUB_REPOSITORY" \
+            -team "$DEMO_TEAM" \
+            -user demo -user-name "Demo user" \
+            -out console/dist/demo-snapshot.json
+
+      - name: Assemble the site
+        run: |
+          site=telecraft/console/dist
+          # Deep links must load fresh (ADR-0042 §3.5). A static host has no
+          # single-page fallback of its own; serving the shell as the
+          # not-found page is how the bundle keeps its own URLs.
+          cp "$site/index.html" "$site/404.html"
+          # The custom domain has to travel with every deployment, or the
+          # next one drops it.
+          echo demo.telecraft.dev > "$site/CNAME"
+          ls -la "$site"
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: telecraft/console/dist
+
+  deploy:
+    name: Publish
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

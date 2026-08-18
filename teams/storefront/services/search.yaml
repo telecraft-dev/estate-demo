@@ -1,0 +1,4 @@
+owner: storefront-team
+class: C3
+paths:
+  - through: [data-flow/gateway]

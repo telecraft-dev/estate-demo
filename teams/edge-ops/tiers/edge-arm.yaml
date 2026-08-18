@@ -1,0 +1,15 @@
+# The arm64 node pool's agents. The pool was authored ahead of the
+# migration and nothing has ever matched the selector: a declared floor of
+# 4 with zero matches, persisting well past the grace window, is the one
+# escalation rule never_seen has (ADR-0035 §4).
+owner: edge-owners
+environment: production
+blueprint: edge-ops/node-agent@3
+selector:
+  telecraft.tier: edge
+  host.arch: arm64
+  deployment.environment: production
+min_expected: 4
+hops:
+  - from: workloads
+    trusted: true

@@ -1,0 +1,16 @@
+# The estate's egress to the observability backend. Shared so every Tier
+# exports through one reviewed endpoint and queue policy.
+name: gateway-exporter
+class: exporter
+type: otlp_http
+version: 3
+owner: gateway-owners
+config:
+  endpoint: https://ingest.observability.internal:4318
+  compression: gzip
+  sending_queue:
+    enabled: true
+    queue_size: 10000
+  retry_on_failure:
+    enabled: true
+    max_elapsed_time: 300s

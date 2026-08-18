@@ -1,0 +1,15 @@
+# The storefront team's own Tier: a Tier is owned by whoever runs it, not
+# by the platform team (ADR-0016). Mobile traffic arrives from the public
+# internet, so the arrival is untrusted and the platform's attribute
+# namespace is stripped on intake (ADR-0007).
+owner: storefront-team
+environment: production
+blueprint: storefront/mobile-collector@1
+selector:
+  telecraft.tier: mobile-edge
+  deployment.environment: production
+min_expected: 3
+serving:
+  endpoint: wss://opamp.telecraft.internal/v1/opamp
+hops:
+  - from: internet

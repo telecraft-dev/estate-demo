@@ -1,0 +1,11 @@
+# Grants: ancestor-authored, scoped exceptions (ADR-0021 §3). Everything a
+# team may use traces to the root list or to a named Grant, so the audit
+# chain is total. Data Flow needs Kafka egress for the bridge Tier, which
+# its own list does not carry — Platform granted it, and the palette shows
+# the Grant beside every entry it admits.
+grants:
+  - id: kafka-egress-for-data-flow
+    owner: platform-observability
+    team: data-flow
+    adds:
+      - exporter/kafka

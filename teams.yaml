@@ -1,0 +1,34 @@
+# The team tree (ADR-0017), supplied through the teams.yaml seam. Platform
+# Engineering runs the telemetry substrate through two teams — Data Flow
+# owns the aggregation Tiers, Edge Operations the node agents — while
+# Information Security owns the redaction Component every lane carrying
+# customer data references, and Product Engineering owns the Services whose
+# Paths decide how strictly each Tier is judged (ADR-0025 §4).
+teams:
+  - id: engineering
+    name: Engineering
+    owners: [engineering-lead]
+    teams:
+      - id: platform
+        name: Platform Engineering
+        owners: [platform-observability]
+        teams:
+          - id: data-flow
+            name: Data Flow
+            owners: [gateway-owners]
+          - id: edge-ops
+            name: Edge Operations
+            owners: [edge-owners]
+      - id: infosec
+        name: Information Security
+        owners: [pii-guardians]
+      - id: product
+        name: Product Engineering
+        owners: [product-platform]
+        teams:
+          - id: checkout
+            name: Checkout
+            owners: [checkout-team]
+          - id: storefront
+            name: Storefront
+            owners: [storefront-team]
