@@ -19,6 +19,17 @@ on:
         description: The telecraft-dev/telecraft ref to build the console and generator from
         required: false
         default: main
+  # The platform tells us when it changes (telecraft's demo-dispatch.yml).
+  # The demo is built from that repository's evaluators and its console, so
+  # a change there changes what this site shows — and before this existed,
+  # nothing said so: the visual identity pass shipped and the demo went on
+  # serving the palette it replaced.
+  #
+  # No inputs come with a repository_dispatch, so the checkout below falls
+  # back to `main`, which is exactly the ref the platform is asking us to
+  # build.
+  repository_dispatch:
+    types: [console-updated]
 
 # The Pages deployment needs to write a deployment and mint an OIDC token
 # for it; nothing else here writes anything.
