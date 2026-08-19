@@ -134,19 +134,21 @@ jobs:
             -repository "$GITHUB_REPOSITORY" \
             -team "$DEMO_TEAM" \
             -user demo -user-name "Demo user" \
-            -out console/dist/demo-snapshot.json
+            -out "$RUNNER_TEMP/demo-snapshot.json"
 
+      # The console owns what a published site is made of: an entry
+      # document per Workspace URL so a static host answers those URLs 200
+      # rather than from its not-found page (ADR-0042 §3.5), the snapshot
+      # beside the bundle, and the CNAME the custom domain needs on every
+      # deployment. The route list lives beside the router that defines it,
+      # so a new Workspace cannot ship a URL that 404s.
       - name: Assemble the site
+        working-directory: telecraft/console
         run: |
-          site=telecraft/console/dist
-          # Deep links must load fresh (ADR-0042 §3.5). A static host has no
-          # single-page fallback of its own; serving the shell as the
-          # not-found page is how the bundle keeps its own URLs.
-          cp "$site/index.html" "$site/404.html"
-          # The custom domain has to travel with every deployment, or the
-          # next one drops it.
-          echo demo.telecraft.dev > "$site/CNAME"
-          ls -la "$site"
+          node tools/assemble-site.mjs dist \
+            --snapshot "$RUNNER_TEMP/demo-snapshot.json" \
+            --domain demo.telecraft.dev
+          ls -la dist
 
       - uses: actions/configure-pages@v5
 
