@@ -96,3 +96,17 @@ imported once from the upstream collector repositories and committed here:
 ```sh
 go run ./cmd/catalogue-import -tag v0.158.0 -source <checkout of core and contrib> -out catalogues
 ```
+
+## Licence
+
+[Elastic License 2.0](LICENSE), the same licence as the rest of the project
+(telecraft ADR-0050 §6).
+
+This estate is the worked example: it exists to be read, copied and adapted
+into a real one. The licence permits that — use, modification and
+distribution — and withholds offering Telecraft to third parties as a
+hosted or managed service.
+
+The Catalogue artefacts under `catalogues/` are imported from the upstream
+OpenTelemetry Collector repositories and keep the licences they arrived
+under (ADR-0020 §5). They are not covered by this one.
