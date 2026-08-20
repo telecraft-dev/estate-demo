@@ -18,16 +18,21 @@ on:
       telecraft_ref:
         description: The telecraft-dev/telecraft ref to build the console and generator from
         required: false
-        default: main
-  # The platform tells us when it changes (telecraft's demo-dispatch.yml).
+        default: release
+  # The platform tells us when it releases (telecraft's demo-dispatch.yml).
   # The demo is built from that repository's evaluators and its console, so
-  # a change there changes what this site shows — and before this existed,
-  # nothing said so: the visual identity pass shipped and the demo went on
-  # serving the palette it replaced.
+  # a change there changes what this site shows.
   #
   # No inputs come with a repository_dispatch, so the checkout below falls
-  # back to `main`, which is exactly the ref the platform is asking us to
-  # build.
+  # back to `release` — the tag telecraft moves to each new stable version
+  # (telecraft ADR-0049 §5). This site is built from a release and not from
+  # `main`, so a bug on `main` cannot reach it; between releases it lags,
+  # deliberately.
+  #
+  # That fallback is the pin, and it has to hold for every trigger, not only
+  # this one: a push to this estate carries no ref either, and if the two
+  # disagreed, which version of the platform this site runs would depend on
+  # which event happened to fire last.
   repository_dispatch:
     types: [console-updated]
 
@@ -66,7 +71,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: telecraft-dev/telecraft
-          ref: ${{ inputs.telecraft_ref || 'main' }}
+          ref: ${{ inputs.telecraft_ref || 'release' }}
           path: telecraft
 
       - uses: actions/setup-go@v5
