@@ -592,18 +592,86 @@ tiers:
   # every component the artefact instantiates reports its own telemetry;
   # the generator renders that into the join-key attribute combinations R-4
   # pins, and the platform's own normaliser reads them back.
+  #
+  # `flow:` is the pipeline-grain metering reading (ADR-0040): per (Tier,
+  # signal) in and out item counts, where in is receiver-accepted and out
+  # is per-exporter sent. A Tier that declares no flow, or a lane a flow
+  # block leaves out, stays Known false with the cause said out loud — a
+  # zero here means "the counters read zero", never "nobody looked"
+  # (ADR-0008).
 
   - tier: data-flow/gateway
     signals:
       metrics: {present: true, volume: 412880}
       logs: {present: true, volume: 20114}
     emitting: [all]
+    # The busiest Tier in the estate. Nothing in any of its three lanes
+    # drops records — the untrusted-hop attributes processor strips the
+    # platform's namespace and the redaction transform rewrites bodies, but
+    # neither is a filter — so in and out match and the reduction is zero.
+    # The memory limiter pushed back at the evening peak, which is what the
+    # refused figure is: items the receiver declined to accept, and one of
+    # the only three readings metering itself grades red (ADR-0040 §3).
+    flow:
+      signals:
+        traces:
+          in: 8096084
+          out: 8096084
+          exporters:
+            otlp_http/data-flow.gateway-exporter: 8096084
+          newest: 2026-08-19T08:59:16Z
+        logs:
+          in: 33049590
+          out: 33049590
+          exporters:
+            otlp_http/data-flow.gateway-exporter: 33049590
+          refused: 4182
+          send_failed: 118
+          newest: 2026-08-19T08:59:16Z
+        metrics:
+          in: 8842116
+          out: 8842116
+          exporters:
+            otlp_http/data-flow.gateway-exporter: 8842116
+          newest: 2026-08-19T08:59:16Z
+      # Six collectors, six process incarnations: nothing restarted in the
+      # window.
+      incarnations:
+        count: 6
 
   - tier: data-flow/gateway-staging
     signals:
       metrics: {present: true, volume: 18220}
       logs: {present: true, volume: 1902}
     emitting: [all]
+    # The logs lane reads zero in and zero out, and that zero is a
+    # measurement: the artefact routes a logs pipeline, the receiver is
+    # listening, and nothing has been sent to it since the namespace was
+    # rebuilt on the 14th. The same silence the `rows:` reading above shows
+    # at service grain, seen from the pipeline side — an arrival claim
+    # nothing backs (ADR-0038 §5).
+    flow:
+      signals:
+        traces:
+          in: 41208
+          out: 41208
+          exporters:
+            otlp_http/data-flow.gateway-exporter: 41208
+          newest: 2026-08-19T08:58:22Z
+        logs:
+          in: 0
+          out: 0
+          exporters:
+            otlp_http/data-flow.gateway-exporter: 0
+          newest: 2026-08-19T08:58:22Z
+        metrics:
+          in: 9921
+          out: 9921
+          exporters:
+            otlp_http/data-flow.gateway-exporter: 9921
+          newest: 2026-08-19T08:58:22Z
+      incarnations:
+        count: 2
 
   - tier: data-flow/kafka-bridge
     signals:
@@ -616,12 +684,78 @@ tiers:
     # didn't work" in its sharpest form (ADR-0038 §5c).
     silent: [batch/batcher]
     shortfall_since: 2026-08-18T04:00:00Z
+    # Two readings about one Tier that disagree without contradicting each
+    # other, which is the point of keeping them apart. The flow reading is
+    # healthy — the counters live on the receiver and the exporter, and
+    # both are reporting — while the batch processor between them emits no
+    # self-telemetry at all and its claim is red. Neither reading stands in
+    # for the other.
+    #
+    # The metrics lane has no pipeline in this artefact: the bridge carries
+    # traces and logs and nothing else. No exporter is wired for metrics,
+    # so the lane declares no exporter split and its zero is the honest
+    # count of what a pipeline that does not exist moved.
+    flow:
+      signals:
+        traces:
+          in: 1942006
+          out: 1942006
+          exporters:
+            otlp_http/data-flow.gateway-exporter: 1942006
+          newest: 2026-08-19T08:59:35Z
+        logs:
+          in: 5940220
+          out: 5940220
+          exporters:
+            otlp_http/data-flow.gateway-exporter: 5940220
+          newest: 2026-08-19T08:59:35Z
+        metrics:
+          in: 0
+          out: 0
+          newest: 2026-08-19T08:59:35Z
+      # Ten incarnations across five collectors: every one of them restarted
+      # when the Rollout's stage went APPLIED at 06:12, so the window holds
+      # two process starts each. A count of starts is never a health
+      # verdict — a Tier that scaled out, one that was rolled, and one that
+      # crash-looped all raise this number, and telling them apart belongs
+      # to the claims, not to the meter (ADR-0040 §4).
+      incarnations:
+        count: 10
 
   - tier: edge-ops/edge
     signals:
       metrics: {present: true, volume: 1804221}
       logs: {present: true, volume: 44120}
     emitting: [all]
+    # Twenty-four node agents forwarding everything they take: the lanes
+    # enrich, limit and batch, and none of them filters, so every reduction
+    # here is zero and no error counter has moved. This is what a healthy
+    # Tier's flow reading looks like, and it is deliberately unremarkable.
+    flow:
+      signals:
+        traces:
+          in: 7214880
+          out: 7214880
+          exporters:
+            otlp_http/forward: 7214880
+          newest: 2026-08-19T08:59:24Z
+        logs:
+          in: 26331904
+          out: 26331904
+          exporters:
+            otlp_http/forward: 26331904
+          newest: 2026-08-19T08:59:24Z
+        metrics:
+          in: 4147200
+          out: 4147200
+          exporters:
+            otlp_http/forward: 4147200
+          newest: 2026-08-19T08:59:24Z
+      # One incarnation per node agent. node-23 went quiet overnight and
+      # reads stale, which is a collector that stopped reporting rather
+      # than a process that started again — so it lowers nothing here.
+      incarnations:
+        count: 24
 
   - tier: edge-ops/edge-arm
     # The arm64 pool was authored ahead of the migration and nothing has
@@ -634,10 +768,66 @@ tiers:
     ever_seen: false
     first_watched: 2026-05-02T00:00:00Z
     shortfall_since: 2026-05-02T00:00:00Z
+    # No collector has ever matched this Tier, so there are no counters to
+    # read and no incarnations to count. Every lane stays unknown with the
+    # reason stated. This is the one reading in the file that must never
+    # become a zero: a Tier nobody has ever seen and a Tier that moved
+    # nothing overnight are different situations with different fixes, and
+    # a metered zero would make them look identical (ADR-0008, ADR-0040 §6).
+    flow:
+      signals:
+        traces:
+          known: false
+          cause: no collector has ever matched this Tier, so no flow counters exist to read
+        logs:
+          known: false
+          cause: no collector has ever matched this Tier, so no flow counters exist to read
+        metrics:
+          known: false
+          cause: no collector has ever matched this Tier, so no flow counters exist to read
+      incarnations:
+        known: false
+        cause: no collector has ever reported an instance identity for this Tier
 
   - tier: storefront/mobile-edge
     signals:
       metrics: {present: true, volume: 96220}
       logs: {present: true, volume: 4410}
     emitting: [all]
-
+    # The Tier that shows what a reduction is for. Its metrics lane runs a
+    # filter processor that drops the mobile SDK's debug counters, and it
+    # discards more than three quarters of everything it accepts: a figure,
+    # never a grade, and a filter dropping most of its input is doing
+    # exactly the job it was authored to do (ADR-0040 §3).
+    #
+    # Its traces lane is the other half of the catalogue-web finding. The
+    # only Service whose Path traverses this Tier stopped emitting spans
+    # after the mobile release, so the receiver has accepted nothing since:
+    # the pipeline is configured, listening, and moving nothing. Zero in
+    # and zero out are what was read, and the lane's freshness is fine —
+    # the collectors are reporting, they simply have nothing to report
+    # about. That is the shape a broken pipeline has at pipeline grain.
+    #
+    # There is no logs pipeline in this artefact at all, so its zero means
+    # something different again and declares no exporter split: nothing is
+    # wired to send.
+    flow:
+      signals:
+        traces:
+          in: 0
+          out: 0
+          exporters:
+            otlp_http/uplink: 0
+          newest: 2026-08-19T08:59:43Z
+        metrics:
+          in: 1880440
+          out: 402118
+          exporters:
+            otlp_http/uplink: 402118
+          newest: 2026-08-19T08:59:43Z
+        logs:
+          in: 0
+          out: 0
+          newest: 2026-08-19T08:59:43Z
+      incarnations:
+        count: 3
