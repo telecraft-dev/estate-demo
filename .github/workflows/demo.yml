@@ -73,6 +73,10 @@ jobs:
           repository: telecraft-dev/telecraft
           ref: ${{ inputs.telecraft_ref || 'release' }}
           path: telecraft
+          # The version tags, so the build below can name the release it is
+          # building. Without them the only tag here is `release`, which is
+          # the pointer's name and not a version.
+          fetch-tags: true
 
       - uses: actions/setup-go@v5
         with:
@@ -123,9 +127,18 @@ jobs:
         working-directory: telecraft/console
         run: npm ci
 
+      # The console stamps the version it was built from into its profile
+      # section. `--match 'v*'` keeps the moving `release` pointer out of
+      # the answer; a checkout that is not exactly a version tag names its
+      # commit instead.
       - name: Build the console in demo mode
         working-directory: telecraft/console
-        run: npm run build:demo
+        run: |
+          TELECRAFT_VERSION=$(git -C .. describe --tags --exact-match --match 'v*' 2>/dev/null \
+            || git -C .. rev-parse --short HEAD)
+          export TELECRAFT_VERSION
+          echo "Building the console as $TELECRAFT_VERSION"
+          npm run build:demo
 
       # Every asset is bundled and self-hosted (ADR-0045 §5). The check runs
       # over the built console before the snapshot joins it: the snapshot is
