@@ -1,0 +1,8 @@
+# The workflows pin every action to a commit SHA; Dependabot keeps the
+# pins moving as new releases appear.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
