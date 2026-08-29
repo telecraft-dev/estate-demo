@@ -1,0 +1,10 @@
+catalogue:
+  active: v0.158.0
+  activations:
+    - version: v0.158.0
+      at: 2026-08-29T07:52:44Z
+      by: engineering-lead
+      impact:
+        summary: 'Catalogue v0.158.0: 1 component in use is under a floor.'
+        lines:
+          - 'processor/filter is alpha for metrics in this version, under the beta floor storefront/mobile-edge holds in production for Service Class C2. 1 Blueprint uses it: storefront/mobile-collector (Storefront).'

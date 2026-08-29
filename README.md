@@ -48,6 +48,8 @@ teams/<team>/rollouts/*.yaml   the staged rebind instrument (ADR-0029)
 requirements/*.yaml            the requirements library (REQ-021)
 exemptions/*.yaml              authored waivers (ADR-0037)
 catalogues/catalogue-*.json    installed Catalogues, retained side by side
+rows.yaml                      the declared Effective reading (see below)
+readings.yaml                  the declared arrivals and collectors
 rendered/                      generated — humans never commit here
 CODEOWNERS                     generated from the team tree
 ```
@@ -66,10 +68,10 @@ arrived from it. On an instance those reach the platform through the
 EstateProvider and TelemetryProvider seams; here the estate declares them,
 and `telecraft snapshot` plays them back through the same seams:
 
-- `demo/readings.yaml` — the collectors and their reported identifying
+- `readings.yaml` — the collectors and their reported identifying
   attributes, the arrivals per (Service, Environment), and the
   self-telemetry per Tier.
-- `demo/rows.yaml` — each Service's Effective reading: the running config
+- `rows.yaml` — each Service's Effective reading: the running config
   a collector reports, pipelines with component order preserved.
 
 They are **inputs**, exactly like the authored YAML beside them. Every
@@ -84,7 +86,7 @@ cd telecraft
 go run ./cmd/telecraft render   -estate ../estate-demo -catalogue ../estate-demo/catalogues/catalogue-v0.158.0.json -commit "$(git -C ../estate-demo rev-parse HEAD)"
 go run ./cmd/telecraft snapshot -estate ../estate-demo -catalogue ../estate-demo/catalogues/catalogue-v0.158.0.json \
   -library ../estate-demo/requirements -exemptions ../estate-demo/exemptions \
-  -rows ../estate-demo/demo/rows.yaml -readings ../estate-demo/demo/readings.yaml \
+  -rows ../estate-demo/rows.yaml -readings ../estate-demo/readings.yaml \
   -commit "$(git -C ../estate-demo rev-parse HEAD)" -team engineering \
   -out console/dist/demo-snapshot.json
 cd console && npm ci && npm run build:demo

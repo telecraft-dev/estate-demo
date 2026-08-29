@@ -157,8 +157,8 @@ jobs:
             -catalogues ../estate/catalogues \
             -library ../estate/requirements \
             -exemptions ../estate/exemptions \
-            -rows ../estate/demo/rows.yaml \
-            -readings ../estate/demo/readings.yaml \
+            -rows ../estate/rows.yaml \
+            -readings ../estate/readings.yaml \
             -commit "$GITHUB_SHA" \
             -repository "$GITHUB_REPOSITORY" \
             -team "$DEMO_TEAM" \
