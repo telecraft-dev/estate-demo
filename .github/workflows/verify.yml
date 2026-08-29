@@ -1,0 +1,142 @@
+# The same verification the Demo pipeline performs, run before merge
+# instead of after it: a pull request that breaks the rendered tree, the
+# console build, or the snapshot is caught here, not on main with the
+# deploy already queued behind it.
+#
+# The steps deliberately mirror demo.yml up to the point where that
+# workflow starts assembling the published site. Keeping the two in step
+# by hand is the accepted cost until the platform offers a reusable
+# estate gate (telecraft-dev/telecraft tracks that); when it does, both
+# workflows should call it and this duplication goes.
+
+name: Verify
+
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      telecraft_ref:
+        description: The telecraft-dev/telecraft ref to build the generator from
+        required: false
+        default: release
+
+permissions:
+  contents: read
+
+# A superseded push to the same pull request has nothing left to prove;
+# only the newest run matters.
+concurrency:
+  group: verify-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  # The team the snapshot lands scoped to, matching demo.yml so the two
+  # workflows evaluate the same view.
+  DEMO_TEAM: engineering
+
+jobs:
+  verify:
+    name: Verify the estate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out the estate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: estate
+
+      # The active Catalogue authoring is judged against. The designation
+      # lives once, in the estate's own activations.yaml; reading it here
+      # keeps the workflow from carrying a second copy that could drift
+      # from the estate's.
+      - name: Read the active catalogue from the estate
+        run: |
+          active=$(grep -m1 -E '^ *active:' estate/activations.yaml | awk '{print $2}')
+          echo "the estate activates catalogue $active"
+          test -f "estate/catalogues/catalogue-$active.json"
+          echo "ACTIVE_CATALOGUE=catalogues/catalogue-$active.json" >> "$GITHUB_ENV"
+
+      # Built from the platform's release, exactly as the Demo pipeline
+      # is, so what passes here is what deploys there.
+      - name: Check out the platform
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: telecraft-dev/telecraft
+          ref: ${{ inputs.telecraft_ref || 'release' }}
+          path: telecraft
+          fetch-tags: true
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: stable
+          cache-dependency-path: telecraft/go.sum
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: telecraft/console/package-lock.json
+
+      # Rendering is a deterministic function of the authored trees
+      # (ADR-0028 §2), so the committed rendered/ tree must equal a fresh
+      # render, checked byte for byte at the commit the committed
+      # artefacts stamp themselves with. A mismatch means the sources
+      # moved and the tree did not: the pull request needs a re-render.
+      - name: The rendered tree matches its sources
+        working-directory: telecraft
+        run: |
+          stamped=$(grep -oE '[0-9a-f]{40}' \
+            ../estate/rendered/_estate/unmatched.yaml | head -1)
+          echo "the committed tree stamps itself $stamped"
+          go run ./cmd/telecraft render \
+            -estate ../estate \
+            -catalogue "../estate/$ACTIVE_CATALOGUE" \
+            -commit "$stamped" \
+            -out "$RUNNER_TEMP/recompute"
+          diff -r "$RUNNER_TEMP/recompute/rendered" ../estate/rendered
+          diff "$RUNNER_TEMP/recompute/CODEOWNERS" ../estate/CODEOWNERS
+
+      # The render an instance's PR bot performs; the tree is never
+      # committed back.
+      - name: Render at the checked commit
+        working-directory: telecraft
+        run: |
+          go run ./cmd/telecraft render \
+            -estate ../estate \
+            -catalogue "../estate/$ACTIVE_CATALOGUE" \
+            -commit "$GITHUB_SHA"
+
+      - name: Install the console's dependencies
+        working-directory: telecraft/console
+        run: npm ci
+
+      - name: Build the console in demo mode
+        working-directory: telecraft/console
+        run: |
+          TELECRAFT_VERSION=$(git -C .. describe --tags --exact-match --match 'v*' 2>/dev/null \
+            || git -C .. rev-parse --short HEAD)
+          export TELECRAFT_VERSION
+          echo "Building the console as $TELECRAFT_VERSION"
+          npm run build:demo
+
+      # Every asset is bundled and self-hosted (ADR-0045 §5).
+      - name: Zero-CDN check
+        working-directory: telecraft/console
+        run: npm run check:zero-cdn
+
+      - name: Evaluate the estate into the API snapshot
+        working-directory: telecraft
+        run: |
+          go run ./cmd/telecraft snapshot \
+            -estate ../estate \
+            -catalogue "../estate/$ACTIVE_CATALOGUE" \
+            -catalogues ../estate/catalogues \
+            -library ../estate/requirements \
+            -exemptions ../estate/exemptions \
+            -rows ../estate/rows.yaml \
+            -readings ../estate/readings.yaml \
+            -commit "$GITHUB_SHA" \
+            -repository "$GITHUB_REPOSITORY" \
+            -team "$DEMO_TEAM" \
+            -user demo -user-name "Demo user" \
+            -out "$RUNNER_TEMP/demo-snapshot.json"
